@@ -1,5 +1,8 @@
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { useState } from 'react';
 import styled from 'styled-components';
+import { auth } from '../firebase';
+import { useNavigate } from 'react-router-dom';
 
 const Wrapper = styled.div`
     height: 100%;
@@ -42,7 +45,8 @@ const Error = styled.span`
 `;
 
 export default function CreateAccount() {
-    const [isLoaing, setIsLoding] = useState(false);
+    const navigate = useNavigate();
+    const [isLoading, setIsLoading] = useState(false);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -57,26 +61,33 @@ export default function CreateAccount() {
             setPassword(value);
         }
     };
-    const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const onSubmit = async(e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (isLoading || name === '' || email === '' || password === '') {
+            return;
+        }
         try {
-
+            setIsLoading(true);
+            const credentials = await createUserWithEmailAndPassword(auth, email, password);
+            console.log(credentials.user);
+            await updateProfile(credentials.user, { displayName: name, });
+            navigate('/');
         } catch (e) { 
-
+            // setError
         }
         finally {
-            setIsLoding(false);
+            setIsLoading(false);
         }
     }
 
     return (
         <Wrapper>
-            <Title>Log into X</Title>
+            <Title>Join 𝕏</Title>
             <Form onSubmit={onSubmit}>
                 <Input onChange={onChange} name='name' value={name} placeholder='Name' type='text' required />
                 <Input onChange={onChange} name='email' value={email} placeholder='Email' type='email' required />
-                <Input onChange={onChange} name='password' value={password} placeholder='Password' type='password' required />
-                <Input type='submit' value={isLoaing ? 'Loading...' : 'Create Account'} />
+                <Input onChange={onChange} name='password' value={password} placeholder='Password' type='password' required autoComplete="off"/>
+                <Input type='submit' value={isLoading ? 'Loading...' : 'Create Account'} />
             </Form>
             {error !== '' ? <Error>{error}</Error> : null};
         </Wrapper>
